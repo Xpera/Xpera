@@ -1,3 +1,4 @@
+# -*- coding: utf-8 *-*
 from local_settings.py import *
 # Django settings for Xpera project.
 
@@ -6,6 +7,13 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
+
+LOGIN_REDIRECT_URL = '/main/'
+
+
+DATE_FORMAT = '%m/%d/%Y'
+
+COMPRESS_ENABLED = True
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.4/ref/settings/#allowed-hosts
@@ -36,18 +44,18 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
-MEDIA_ROOT = ''
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, "../media")
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://media.lawrence.com/media/", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = 'media/'
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = ''
+STATIC_ROOT = os.path.join(PROJECT_ROOT, "../static")
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -55,17 +63,20 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
+    os.path.join(PROJECT_ROOT, "static"),
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
+
+COMPRESS_OUTPUT_DIR = "cache"
 
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    'compressor.finders.CompressorFinder'
 )
 
 # Make this unique, and don't share it with anybody.
@@ -75,7 +86,7 @@ SECRET_KEY = '&amp;6n1(=9n!g^(z@j-jzx%clzv2xy+z!47j&amp;-3l-juhzbg$+$#@g'
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
+#    'django.template.loaders.eggs.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -88,16 +99,28 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.contrib.auth.context_processors.auth",
+    "django.core.context_processors.debug",
+    "django.core.context_processors.i18n",
+    "django.core.context_processors.media",
+    "django.core.context_processors.static",
+    "django.core.context_processors.tz",
+    "django.core.context_processors.request",
+    "django.contrib.messages.context_processors.messages",
+)
+
 ROOT_URLCONF = 'Xpera.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'Xpera.wsgi.application'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
+TEMPLATE_DIRS = [
+    os.path.join(PROJECT_ROOT, "../templates/"),
+    os.path.join(PROJECT_ROOT, "./templates/"),
+    os.path.join(PROJECT_ROOT, "../templates"),
+    os.path.join(PROJECT_ROOT, "./templates"),
+]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -107,9 +130,14 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
+    'django.contrib.admin',
+    'south',
+    'compressor',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+
+    'apps.event',
+    'apps.account',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -140,3 +168,23 @@ LOGGING = {
         },
     }
 }
+
+#LOGIN_REDIRECT_URL = '/home/'
+#LOGOUT_REDIRECT_URL = '/login/'
+
+# LESS and django-compressor setup
+COMPRESS_MINIMIZED = ''
+if not DEBUG:
+    COMPRESS_MINIMIZED = '-x'
+
+# we assume lessc installed and accesible in system/env path
+# if not, override this settings in local_settings
+LESS_COMPILER_PATH = "lessc"
+
+COMPRESS_PRECOMPILERS = (
+    ('text/less', '%(less_compiler_path)s --include-path="%(include_path)s"'
+                  ' {infile} {outfile} %(minimized)s'
+        % ({'less_compiler_path': LESS_COMPILER_PATH,
+            'include_path': STATIC_ROOT,
+            'minimized': COMPRESS_MINIMIZED})),
+)
